@@ -20,7 +20,7 @@ public:
 
     bool initialize(const std::string& cascadePath);
     /**
-     * @brief 初始化引擎，加载所有模型文件
+     * @brief 初始化引擎，加载所有模型
      * @param cascadePath LBP/Haar 模型文件的路径
      * @return true 如果加载成功
     */
