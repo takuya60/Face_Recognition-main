@@ -1,5 +1,6 @@
 #pragma
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/face.hpp>
 #include <string>
 
 struct RecognitionResult
@@ -41,8 +42,9 @@ public:
      */
 
 private:
+    //找到人脸，返回方框
     cv::CascadeClassifier faceDetector; // LBP 人脸检测器
-    cv::Ptr<cv::face::LBPHFaceRecognizer> faceRecognizer; // LBPH 人脸识别器
+    //识别人脸，返回id
+    cv::Ptr <cv::face::LBPHFaceRecognizer> faceRecognizer; // LBPH 人脸识别器
     void loadDatabase();
-    /* data */
 };
