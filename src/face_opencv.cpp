@@ -4,12 +4,16 @@
 #include <opencv2/highgui.hpp>
 #include <fstream>
 #include <iostream>
-#include <experimental/filesystem>
+//#include <experimental/filesystem>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cstring>
 
 using namespace cv;
 using namespace std;
 
-namespace fs=std::experimental::filesystem;
+//namespace fs=std::experimental::filesystem;
 
 face_processor::face_processor(){}
 face_processor::~face_processor(){}
@@ -29,7 +33,7 @@ bool face_processor::initialize(const std::string& cascadePath)
 
     cout<<"[INFO] Face processor initialized"<<endl;
     return true;
-};
+}
 
 RecognitionResult face_processor::processFrame(const cv::Mat& frame)
 {
@@ -93,61 +97,75 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
 
     }
     return result;
-};
+}
 
 /**
  * @brief 注册新的人脸
  */
 bool face_processor::enrollNewFace(const cv::Mat& faceImage, int employeeId)
 {
-    if(faceImage.empty())
-    return false;
+    if (faceImage.empty())
+        return false;
 
     string saveDir = "face_db/";
-    fs::create_directories(saveDir);
-    string filename=saveDir+"person_"+to_string(employeeId)+".png";
-    //保存
-    imwrite(filename,faceImage);
+    // 使用 POSIX mkdir 创建目录
+    struct stat st = {0};
+    if (stat(saveDir.c_str(), &st) == -1) {
+        mkdir(saveDir.c_str(), 0755);
+    }
+
+    string filename = saveDir + "person_" + to_string(employeeId) + ".png";
+    imwrite(filename, faceImage);
 
     vector<Mat> images;
     vector<int> labels;
-    //directory_iterator 文件夹扫描器 是因为，读取的不是数组，而是其它东西
-    for ( const auto &entry : fs::directory_iterator(saveDir))
-    {
-        if (fs::is_regular_file(entry))
-        {
-            Mat img = imread(entry.path().string(), IMREAD_GRAYSCALE);
-            if (!img.empty())
-            {
-                int id = -1;
-                //entry.path().stem()：获取不带扩展名的文件名
-                string path = entry.path().stem().string(); // person_XX
-                if (path.find("person_") == 0)
-                //stoi string to int
-                //substr(7)取第七个字后的子字符串
-                    id =stoi(path.substr(7));
+
+    DIR* dir = opendir(saveDir.c_str());
+    if (!dir) {
+        cerr << "[ERROR] Cannot open directory: " << saveDir << endl;
+        return false;
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        string fname = entry->d_name;
+        if (fname == "." || fname == "..") continue;
+
+        string fullPath = saveDir + fname;
+
+        struct stat pathStat;
+        if (stat(fullPath.c_str(), &pathStat) == 0 && S_ISREG(pathStat.st_mode)) {
+            Mat img = imread(fullPath, IMREAD_GRAYSCALE);
+            if (!img.empty()) {
+                if (fname.find("person_") == 0 && fname.find(".png") != string::npos) {
+                    string id_str = fname.substr(7, fname.find(".png") - 7);
+                    int id = stoi(id_str);
                     images.push_back(img);
                     labels.push_back(id);
+                }
             }
-    
         }
-
     }
-    //重新训练
-    faceRecognizer->train(images,labels);
+    closedir(dir);
+
+    if (images.empty()) {
+        cerr << "[WARN] No face images found in database folder!" << endl;
+        return false;
+    }
+
+    faceRecognizer->train(images, labels);
     faceRecognizer->save("face_model.xml");
-    
+
     cout << "[INFO] Added new face ID=" << employeeId << " and updated database." << endl;
     return true;
-};
+}
+
 void face_processor::loadDatabase()
 {
-    if (fs::exists("face_model.xml"))
-    {
+    struct stat st;
+    if (stat("face_model.xml", &st) == 0) {
         faceRecognizer->load("face_model.xml");
+    } else {
+        cout << "[INFO] No model found." << endl;
     }
-    else
-    {
-        cout<<"[INFO] No modle found"<<endl;
-    }
-};
+}
