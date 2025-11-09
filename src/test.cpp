@@ -8,7 +8,7 @@ int main()
 {
 
     face_processor processor;
-    string cascadePath="";
+    string cascadePath="/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
     if(! processor.initialize(cascadePath))
     {
         cerr<<"初始化失败，模型路径："<<cascadePath<<endl;
@@ -37,8 +37,12 @@ int main()
                         cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
         }
         cv::imshow("Face Recognition",frame);
-
-
+        int key = cv::waitKey(30);
+        if (key == 27) // 27 是 ESC 键
+        {
+            cout << "[INFO] 按下 ESC 退出..." << endl;
+            break; 
+        }
     }
-    
+    return 0;
 };
