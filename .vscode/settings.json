@@ -2,7 +2,8 @@
     "ros.distro": "noetic",
     "C_Cpp.errorSquiggles": "enabled",
     "files.associations": {
-        "qlabel": "cpp"
+        "qlabel": "cpp",
+        "iostream": "cpp"
     },
     "C_Cpp.default.compilerPath": "/opt/fsl-imx-x11/4.1.15-2.1.0/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-g++"
 }
