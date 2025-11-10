@@ -2,14 +2,15 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/face.hpp>
 #include <string>
-
+#include <map>
 struct RecognitionResult
 {
     bool is_foundface;
-    bool is_kown;
+    bool is_known;
     int person_id;
     std::string name;
     cv:: Rect face_position;
+    double confidence;
 };
 
 class face_processor
@@ -33,7 +34,7 @@ public:
      * @return RecognitionResult 包含所有识别结果的结构体
      */
 
-    bool enrollNewFace(const cv::Mat& faceImage, int employeeId);
+    bool enrollNewFace(const cv::Mat& faceImage, int employeeId,const std::string& employeeName);
     /**
      * @brief (你的功能) 录入新员工
      * @param faceImage 截取到的人脸图像
@@ -47,4 +48,5 @@ private:
     //识别人脸，返回id
     cv::Ptr <cv::face::LBPHFaceRecognizer> faceRecognizer; // LBPH 人脸识别器
     void loadDatabase();
+    std::map<int, std::string> m_nameMap;
 };

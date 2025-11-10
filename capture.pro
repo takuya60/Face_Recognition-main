@@ -1,14 +1,14 @@
-# ======== face_app.pro ========
-# 编译你的主识别程序
+# ======== capture_tool.pro ========
+# 编译你的抓拍工具
 
 QT += core gui widgets
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
-TARGET = face_app
+TARGET = capture_tool
 
 # --- 路径设置 ---
-OBJECTS_DIR = $$OUT_PWD/obj/face_app
+OBJECTS_DIR = $$OUT_PWD/obj/capture_tool
 DESTDIR = $$OUT_PWD/bin
 
 # --- 1. 获取 SDK 环境 ---
@@ -26,18 +26,16 @@ INCLUDEPATH += \
 
 # --- 3. 源文件 ---
 SOURCES += \
-    src/face_opencv.cpp \
-    src/test.cpp
+    src/capture_tool.cpp   # <-- 只需要这一个 main 文件
 
-HEADERS += \
-    inc/face_opencv.h
+# (不需要 face_opencv.h)
 
-# --- 4. 链接库 ---
+# --- 4. 链接库 (需要的库更少) ---
 LIBS += -L$${SDK_SYSROOT}/usr/lib \
         -lopencv_core \
         -lopencv_imgproc \
         -lopencv_highgui \
         -lopencv_imgcodecs \
-        -lopencv_videoio \
-        -lopencv_objdetect \
-        -lopencv_face
+        -lopencv_videoio 
+        
+# (这个工具不需要 objdetect 或 face 库)

@@ -30,6 +30,26 @@ bool face_processor::initialize(const std::string& cascadePath)
     faceRecognizer = cv::face::createLBPHFaceRecognizer();
 
     loadDatabase();
+    // --- 一次性加载所有姓名到 m_nameMap ---
+    std::cout << "[INFO] Loading names from face_labels.txt..." << std::endl;
+    // (确保这个路径是你在 i.MX6U 上的 *绝对* 路径)
+    std::ifstream fin("/mnt/tf/face_labels.txt"); 
+    
+    if (fin)
+    {
+        int id;
+        std::string name;
+        // 循环读取文件所有行
+        while (fin >> id >> name)
+        {
+            m_nameMap[id] = name; // 存入 map
+            std::cout << "  -> Loaded ID " << id << " = " << name << std::endl;
+        }
+        fin.close();
+    } else {
+        std::cerr << "[WARN] Could not open face_labels.txt. Names will not be shown." << std::endl;
+    }
+    // --- 加载姓名结束 --
 
     cout<<"[INFO] Face processor initialized"<<endl;
     return true;
@@ -39,9 +59,10 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
 {
     RecognitionResult result;
     result.is_foundface=false;
-    result.is_kown=false;
-    result.name="Unkown";
+    result.is_known=false;
+    result.name="Unknown";
     result.person_id=-1;
+    result.confidence = 0.0;
 
     if (frame.empty())
         return result;
@@ -50,7 +71,7 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
     //cvtcolor 色彩转换函数（convertcolor）
     //COLOR_BayerBG2GRAY 指定从BGR转化成灰度
     //人脸检测和 LBPH 识别算法通常在灰度图上运行
-    cvtColor(frame,gray,COLOR_BayerBG2GRAY);
+    cvtColor(frame,gray,COLOR_BGR2GRAY);
     //增强灰度图的对比度
     equalizeHist(gray,gray);
 
@@ -70,28 +91,18 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
     if(faceRecognizer)
     {
         int label=-1;
-        double condfidence =0.0;
-        faceRecognizer->predict(faceROI,label,condfidence);
-        if( condfidence<80.0)
+        double confidence =0.0;
+        faceRecognizer->predict(faceROI,label,confidence);
+        result.confidence = confidence;
+        if( confidence<80.0)
         {
-            result.is_kown=true;
+            result.is_known=true;
             result.person_id=label;
-            std::ifstream fin("face_labelss.txt");
-            if(fin)
-            {
-                int id;
-                string name;
-                //读取fin里面的id和name
-                while (fin>>id>>name)
-                {
-                    if(id == label)
-                    {
-                        result.name=name;
-                        break;
-                    }
-
-                }
-                
+            if (m_nameMap.count(label)) {
+                // .count() 检查 key 是否存在
+                result.name = m_nameMap[label]; // 从 map 中瞬间找到名字
+            } else {
+                result.name = "ID_Not_In_Map"; // (找到了但 map 中没名字)
             }
         }
 
@@ -102,69 +113,78 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
 /**
  * @brief 注册新的人脸
  */
-bool face_processor::enrollNewFace(const cv::Mat& faceImage, int employeeId)
+bool face_processor::enrollNewFace(const cv::Mat& faceImage, int employeeId, const std::string& employeeName)
 {
     if (faceImage.empty())
         return false;
 
-    string saveDir = "face_db/";
-    // 使用 POSIX mkdir 创建目录
+    // --- 1. (不变) 保存图像到 face_db/ ---
+    string saveDir = "/mnt/tf/face_db/";
     struct stat st = {0};
     if (stat(saveDir.c_str(), &st) == -1) {
         mkdir(saveDir.c_str(), 0755);
     }
-
     string filename = saveDir + "person_" + to_string(employeeId) + ".png";
     imwrite(filename, faceImage);
 
+    // --- 2. (不变) 重新加载所有图像并训练 ---
     vector<Mat> images;
     vector<int> labels;
-
     DIR* dir = opendir(saveDir.c_str());
-    if (!dir) {
-        cerr << "[ERROR] Cannot open directory: " << saveDir << endl;
-        return false;
-    }
+    if (!dir) { /* ... 错误处理 ... */ return false; }
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
+        // ... (和你的旧代码一样，遍历所有 .png)
+        // ... (解析 id, images.push_back(img), labels.push_back(id))
+        // (我将简化这里的 POSIX C 代码，只保留关键部分)
         string fname = entry->d_name;
         if (fname == "." || fname == "..") continue;
-
         string fullPath = saveDir + fname;
-
         struct stat pathStat;
         if (stat(fullPath.c_str(), &pathStat) == 0 && S_ISREG(pathStat.st_mode)) {
-            Mat img = imread(fullPath, IMREAD_GRAYSCALE);
-            if (!img.empty()) {
-                if (fname.find("person_") == 0 && fname.find(".png") != string::npos) {
-                    string id_str = fname.substr(7, fname.find(".png") - 7);
-                    int id = stoi(id_str);
-                    images.push_back(img);
-                    labels.push_back(id);
-                }
-            }
+             Mat img = imread(fullPath, IMREAD_GRAYSCALE);
+             if (!img.empty() && fname.find("person_") == 0) {
+                 string id_str = fname.substr(7, fname.find(".png") - 7);
+                 int id = stoi(id_str);
+                 images.push_back(img);
+                 labels.push_back(id);
+             }
         }
     }
     closedir(dir);
 
-    if (images.empty()) {
-        cerr << "[WARN] No face images found in database folder!" << endl;
-        return false;
-    }
+    if (images.empty()) { /* ... 错误处理 ... */ return false; }
 
     faceRecognizer->train(images, labels);
-    faceRecognizer->save("face_model.xml");
+    faceRecognizer->save("/mnt/tf/face_model.xml"); // (使用绝对路径)
+
+    cout << "[INFO] face_model.xml 已更新。" << endl;
+
+    // --- 3. (新!) 更新 face_labels.txt ---
+    // (这个逻辑从 enroll_tool 移到了引擎内部)
+    std::ofstream fout("/mnt/tf/face_labels.txt", std::ios_base::app); 
+    if (!fout) {
+        cerr << "[ERROR] 无法打开 face_labels.txt 进行写入！" << endl;
+        return false; // (模型更新了，但标签没更新，这不好)
+    }
+    fout << employeeId << " " << employeeName << endl;
+    fout.close();
+    cout << "[INFO] face_labels.txt 已更新。" << endl;
+
+    // --- 4. (新!) 立即更新内存中的 map ---
+    // (这是解决“重启才能显示”问题的关键)
+    m_nameMap[employeeId] = employeeName;
+    cout << "[INFO] 内存中的 m_nameMap 已更新。" << endl;
 
     cout << "[INFO] Added new face ID=" << employeeId << " and updated database." << endl;
     return true;
 }
-
 void face_processor::loadDatabase()
 {
     struct stat st;
-    if (stat("face_model.xml", &st) == 0) {
-        faceRecognizer->load("face_model.xml");
+    if (stat("/mnt/tf/face_model.xml", &st) == 0) {
+        faceRecognizer->load("/mnt/tf/face_model.xml");
     } else {
         cout << "[INFO] No model found." << endl;
     }

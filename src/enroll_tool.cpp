@@ -11,10 +11,10 @@ using namespace cv;
 /**
  * @brief 这是一个独立的工具，用于录入新员工
  * * 用法: ./enroll_tool <id> <name> <image_path>
- * * <cascade_path>: haarcascade 模型的路径 (用于检测人脸)
+ * * <cascade_path>: haarcascade 图片名字 (用于检测人脸)
  * <id>:           要分配的员工 ID (例如: 7)
  * <name>:         员工姓名 (例如: ZhangSan)
- * <image_path>:   包含该员工人脸的照片的路径
+ * <image_path>:   图片名字
  */
 int main(int argc, char* argv[]) {
 
@@ -25,11 +25,10 @@ int main(int argc, char* argv[]) {
     if (argc != 4) {
         cerr << "错误：参数数量不正确。" << endl;
         cerr << "用法: " << argv[0] << " <id> <name> <image_path>" << endl;
-        cerr << "示例: " << argv[0] << "  7 ZhangSan /mnt/tf/zhangsan.png" << endl;
+        cerr << "示例: " << argv[0] << "  7 ZhangSan zhangsan.png" << endl;
         return -1;
     }
-
-    string cascadePath = argv[1];
+    string cascadePath="/usr/share/opencv/haarcascades/haarcascade_frontalface_default.xml";
     int employeeId = -1;
     try {
         employeeId = stoi(argv[1]); // 将字符串 ID 转换为整数
@@ -97,7 +96,7 @@ int main(int argc, char* argv[]) {
     }
 
     // 调用你的 enrollNewFace 函数，它会更新 face_model.xml
-    if (!processor.enrollNewFace(faceROI, employeeId)) {
+    if (!processor.enrollNewFace(faceROI, employeeId,employeeName)) {
         cerr << "错误: 录入失败！(enrollNewFace 返回 false)" << endl;
         return -1;
     }
