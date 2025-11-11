@@ -80,6 +80,7 @@ void FaceWorker::startProcessing(int deviceId)
 
         // a. 调用后端引擎 (已优化，不再卡顿)
         RecognitionResult result = m_processor.processFrame(smallFrame);
+        emit recognitionResultReady(result);
         //硬件调用
         handleHardwareTrigger(result);
 

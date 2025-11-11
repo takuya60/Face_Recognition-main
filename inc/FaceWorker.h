@@ -125,4 +125,6 @@ signals:
      * @param isAvailable true 表示“可用”，false 表示“已被占用”
      */
     void idStatusReady(bool isAvailable);
+
+    void recognitionResultReady(const RecognitionResult& result);
 };
