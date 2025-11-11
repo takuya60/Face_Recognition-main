@@ -42,6 +42,8 @@ public:
      * @return true 如果录入成功
      */
 
+     bool isIdRegistered(int employeeId) const;
+
 private:
     //找到人脸，返回方框
     cv::CascadeClassifier faceDetector; // LBP 人脸检测器

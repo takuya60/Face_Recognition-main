@@ -7,7 +7,7 @@
 
 // (注册元类型)
 FaceWorker::FaceWorker(QObject *parent) 
-    : QObject(parent), m_isRunning(false)
+    : QObject(parent), m_isRunning(false),m_snapshotRequested(false),m_lastRecognizedId(-1)
 {
     // 注册 RecognitionResult，使其可以在信号/槽中传递
     qRegisterMetaType<RecognitionResult>("RecognitionResult");
@@ -80,6 +80,8 @@ void FaceWorker::startProcessing(int deviceId)
 
         // a. 调用后端引擎 (已优化，不再卡顿)
         RecognitionResult result = m_processor.processFrame(smallFrame);
+        //硬件调用
+        handleHardwareTrigger(result);
 
         // b. (后端绘制) 在帧上绘制结果
         // (UI 线程不需要再做任何绘制)
@@ -134,6 +136,26 @@ void FaceWorker::captureSnapshot()
 
 }
 
+
+void FaceWorker::checkIdAvailability(const QString& id_str)
+{
+    bool ok;
+    int id = id_str.toInt(&ok);
+
+    if (!ok || id < 0) {
+        emit idStatusReady(false); // (不是有效数字，也算“不可用”)
+        return;
+    }
+
+    // (调用引擎的 "isIdRegistered" 检查)
+    bool isAvailable = !m_processor.isIdRegistered(id);
+    
+    // (把结果发回给 UI)
+    emit idStatusReady(isAvailable);
+}
+
+
+
 /**
  * @brief (槽) 录入已抓拍的人脸 (替代 enroll_tool)。
  * (这个槽会被 UI 线程的信号触发，但在工作线程中执行)
@@ -182,7 +204,7 @@ void FaceWorker::enrollCapturedFace(int employeeId, const QString& employeeName)
     if (success) {
         emit statusChanged(QString("录入成功: ID %1 已保存！").arg(employeeId));
     } else {
-        emit statusChanged("录入失败: 引擎返回 false。");
+        emit statusChanged("录入失败: ID %1 可能已经存在！");
     }
     m_lastCleanFrame.release();
 }
@@ -214,3 +236,21 @@ QImage FaceWorker::convertMatToQImage(const cv::Mat& mat)
     qWarning() << "FaceWorker::convertMatToQImage - 不支持的 cv::Mat 类型: " << mat.type();
     return QImage(); 
 }
+ void FaceWorker::handleHardwareTrigger(const RecognitionResult& result)
+ {
+    if (result.is_known)
+    {
+        if (result.person_id !=m_lastRecognizedId)
+        {
+            m_lastRecognizedId=result.person_id;
+
+            m_hardwareController.triggerSuccessSequence(result.name);
+        }
+        
+    }
+    else 
+    {
+        // (重置状态)
+        m_lastRecognizedId = -1;
+    }
+ }

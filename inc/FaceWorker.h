@@ -5,6 +5,7 @@
 #include <QImage>       // (用于向 UI 传递图像)
 #include <QThread>      // (我们会把它移到 QThread)
 #include "face_opencv.h" // (或 face_opencv.h, 包含你的“引擎”)
+#include "HardwareController.h"
 
 /**
  * @brief (重要) 注册 RecognitionResult 结构体
@@ -30,6 +31,7 @@ public:
 private:
     face_processor m_processor; // 你的“引擎”
     cv::VideoCapture m_cap;     // 摄像头
+    HardwareController m_hardwareController;
     
     /**
      * @brief (关键) 线程安全的停止标志
@@ -54,6 +56,9 @@ private:
      * 将 OpenCV 的 BGR 图像转换为 Qt 的 RGB 图像。
      */
     QImage convertMatToQImage(const cv::Mat& mat);
+    int m_lastRecognizedId;
+
+    void handleHardwareTrigger(const RecognitionResult& result);
 
 public slots:
     // --- 这是 UI 可以 *调用* 的接口 ---
@@ -85,6 +90,15 @@ public slots:
      */
     void enrollCapturedFace(int employeeId, const QString& employeeName);
 
+    // ---  ID录入的检查 ---
+    /**
+     * @brief (槽) 响应 UI 的 ID 输入框“内容改变”事件
+     * @param id_str 从 QLineEdit 传来的 ID 字符串
+     */
+    void checkIdAvailability(const QString& id_str);
+
+
+
 signals:
     // --- 这是 UI 可以 *接收* 的接口 ---
 
@@ -105,4 +119,10 @@ signals:
      * (例如: "摄像头已打开", "初始化失败!", "录入成功!")
      */
     void statusChanged(const QString& message);
+
+    /**
+     * @brief (信号) 报告一个 ID 是否可用
+     * @param isAvailable true 表示“可用”，false 表示“已被占用”
+     */
+    void idStatusReady(bool isAvailable);
 };

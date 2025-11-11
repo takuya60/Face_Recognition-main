@@ -110,6 +110,11 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
     return result;
 }
 
+bool face_processor::isIdRegistered(int employeeId) const
+{
+    return (m_nameMap.count(employeeId)>0);
+}
+
 /**
  * @brief 注册新的人脸
  */
