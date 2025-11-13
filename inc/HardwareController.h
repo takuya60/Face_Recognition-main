@@ -13,13 +13,13 @@ public:
     HardwareController();
     ~HardwareController();
 
-    void triggerSuccessSequence(const std::string& name);
+    void triggerSuccessSequence(int person_id);
 private:
     /**
      * @brief (私有) 真正执行硬件操作的函数
      * (这个函数将在 *它自己* 的 std::thread 中运行)
      */
-    void runSuccessSequence(std::string name);
+    void runSuccessSequence(int person_id);
 
     std::mutex m_hardwareMutex;
 };

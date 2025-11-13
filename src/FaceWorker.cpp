@@ -80,7 +80,6 @@ void FaceWorker::startProcessing(int deviceId)
 
         // a. 调用后端引擎 (已优化，不再卡顿)
         RecognitionResult result = m_processor.processFrame(smallFrame);
-        emit recognitionResultReady(result);
         //硬件调用
         handleHardwareTrigger(result);
 
@@ -226,11 +225,13 @@ QImage FaceWorker::convertMatToQImage(const cv::Mat& mat)
         cv::Mat rgb;
         cv::cvtColor(mat, rgb, cv::COLOR_BGR2RGB);
         // (QImage::Format_RGB888 要求数据是 RGB 顺序)
-        return QImage(rgb.data, rgb.cols, rgb.rows, rgb.step, QImage::Format_RGB888);
+        QImage temp_shallow_copy(rgb.data, rgb.cols, rgb.rows, rgb.step, QImage::Format_RGB888);
+        return temp_shallow_copy.copy();
     } 
     // 1 通道 (灰度) 图像
     else if (mat.type() == CV_8UC1) {
-        return QImage(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_Grayscale8);
+        QImage temp_shallow_copy(mat.data, mat.cols, mat.rows, mat.step, QImage::Format_Grayscale8);
+        return temp_shallow_copy.copy();
     }
     
     // (其他格式暂不支持)
@@ -243,9 +244,11 @@ QImage FaceWorker::convertMatToQImage(const cv::Mat& mat)
     {
         if (result.person_id !=m_lastRecognizedId)
         {
+            emit recognitionResultReady(result);
+
             m_lastRecognizedId=result.person_id;
 
-            m_hardwareController.triggerSuccessSequence(result.name);
+            m_hardwareController.triggerSuccessSequence(result.person_id);
         }
         
     }

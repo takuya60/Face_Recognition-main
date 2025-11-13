@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 #include <opencv2/opencv.hpp>
 #include <opencv2/face.hpp>
 #include <string>
@@ -9,7 +9,7 @@ struct RecognitionResult
     bool is_known;
     int person_id;
     std::string name;
-    cv:: Rect face_position;
+    cv::Rect face_position;
     double confidence;
 };
 
