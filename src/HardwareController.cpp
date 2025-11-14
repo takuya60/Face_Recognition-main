@@ -28,11 +28,8 @@ void HardwareController::runSuccessSequence(int person_id)
     {
         //LED
         //std::cout << "[Hardware] LED On" << std::endl;
-        
 
         //语音
-
-
         if (person_id==24)
         {
         std::cout << "老大我想你了 " << std::endl;

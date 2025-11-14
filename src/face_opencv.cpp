@@ -140,7 +140,6 @@ bool face_processor::enrollNewFace(const cv::Mat& faceImage, int employeeId, con
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
-        // ... (和你的旧代码一样，遍历所有 .png)
         // ... (解析 id, images.push_back(img), labels.push_back(id))
         // (我将简化这里的 POSIX C 代码，只保留关键部分)
         string fname = entry->d_name;
