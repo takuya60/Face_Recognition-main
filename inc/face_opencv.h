@@ -1,8 +1,14 @@
 #pragma once
+#ifdef emit
+    #undef emit
+#endif
 #include <opencv2/opencv.hpp>
 #include <opencv2/face.hpp>
 #include <string>
 #include <map>
+// 我们需要包含一个轻量级的 Qt 头文件来获取 Q_EMIT 的定义。
+#include <QtCore/qobjectdefs.h> // 包含这个文件来获取 Q_EMIT
+#define emit Q_EMIT
 struct RecognitionResult
 {
     bool is_foundface;
@@ -51,4 +57,5 @@ private:
     cv::Ptr <cv::face::LBPHFaceRecognizer> faceRecognizer; // LBPH 人脸识别器
     void loadDatabase();
     std::map<int, std::string> m_nameMap;
+    bool m_isModelLoaded;
 };

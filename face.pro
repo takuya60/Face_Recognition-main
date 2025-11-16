@@ -1,11 +1,11 @@
 # ======== face_app.pro ========
 # 编译你的主识别程序
 
-QT += core gui widgets
+QT += core gui widgets sql
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
-TARGET = face_app
+TARGET = face
 
 # --- 路径设置 ---
 OBJECTS_DIR = $$OUT_PWD/obj/face_app
@@ -27,10 +27,21 @@ INCLUDEPATH += \
 # --- 3. 源文件 ---
 SOURCES += \
     src/face_opencv.cpp \
-    src/test.cpp
+    src/FaceWorker.cpp \
+    src/HardwareController.cpp \
+    src/main_window.cpp \
+    src/log_thread.cpp \
+    src/main.cpp \
+
 
 HEADERS += \
-    inc/face_opencv.h
+    inc/face_opencv.h \
+    inc/FaceWorker.h \
+    inc/log_thread.h \
+    inc/HardwareController.h \
+    inc/main_window.h \
+    inc/serial_port_thread.h \
+    inc/ui.h
 
 # --- 4. 链接库 ---
 LIBS += -L$${SDK_SYSROOT}/usr/lib \

@@ -34,8 +34,19 @@ void FaceWorker::startProcessing(int deviceId)
     }
     
     // 2. 打开摄像头 (使用我们确定的 ID, 比如 1, 对应 /dev/video1)
+    
+    if (m_cap.isOpened()) {
+        m_cap.release();
+        // 释放设备句柄
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    int apiPreference = cv::CAP_GSTREAMER;
+    qDebug() << "isOPEN:" <<m_cap.isOpened() << "\n";
+
     std::string videoPath = "/dev/video" + std::to_string(deviceId);
-    m_cap.open(videoPath, cv::CAP_V4L2); 
+    m_cap.open(deviceId);
+
     if (!m_cap.isOpened()) {
         emit statusChanged(QString("错误: 无法打开摄像头 ID: %1").arg(deviceId));
         return;

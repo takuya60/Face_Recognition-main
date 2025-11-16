@@ -4,6 +4,7 @@
 #include <QString>
 #include <QImage>       // (用于向 UI 传递图像)
 #include <QThread>      // (我们会把它移到 QThread)
+#include <atomic>
 #include "face_opencv.h" // (或 face_opencv.h, 包含你的“引擎”)
 #include "HardwareController.h"
 
@@ -37,13 +38,15 @@ private:
      * @brief (关键) 线程安全的停止标志
      * 'volatile' 确保所有线程都能看到它的最新值。
      */
-    volatile bool m_isRunning;  
+    //volatile bool m_isRunning;  
+    std::atomic<bool> m_isRunning;
     
     /**
      * @brief 抓拍请求标志
      * UI 线程会把它设为 true, 工作线程会检查它。
      */
-    volatile bool m_snapshotRequested;
+    //volatile bool m_snapshotRequested;
+    std::atomic<bool> m_snapshotRequested;
 
     /**
      * @brief (关键) 快照存储

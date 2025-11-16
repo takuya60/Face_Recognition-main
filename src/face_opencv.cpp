@@ -20,6 +20,7 @@ face_processor::~face_processor(){}
 
 bool face_processor::initialize(const std::string& cascadePath)
 {
+    m_isModelLoaded = false;
     //加载人脸检测模型
     if(!faceDetector.load(cascadePath))
     {
@@ -88,7 +89,7 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
     //从gray图像中把人脸的部分抠出来
     Mat faceROI=gray(faces[0]);
 
-    if(faceRecognizer)
+    if(m_isModelLoaded && faceRecognizer)
     {
         int label=-1;
         double confidence =0.0;
@@ -162,6 +163,7 @@ bool face_processor::enrollNewFace(const cv::Mat& faceImage, int employeeId, con
 
     faceRecognizer->train(images, labels);
     faceRecognizer->save("/mnt/tf/face_model.xml"); // (使用绝对路径)
+    m_isModelLoaded = true;
 
     cout << "[INFO] face_model.xml 已更新。" << endl;
 
@@ -189,6 +191,7 @@ void face_processor::loadDatabase()
     struct stat st;
     if (stat("/mnt/tf/face_model.xml", &st) == 0) {
         faceRecognizer->load("/mnt/tf/face_model.xml");
+        m_isModelLoaded = true;
     } else {
         cout << "[INFO] No model found." << endl;
     }
