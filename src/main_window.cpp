@@ -34,7 +34,9 @@ Face::Face(QWidget *parent)
                          emit open_camera_notification(2);});
     connect(ui->btn_log, &QPushButton::clicked, 
             this, [=](){ ui->Page->setCurrentIndex(1); 
-                         emit stop_camera_notification();});
+                         emit stop_camera_notification();
+                         //zhao
+                         emit read_notification(10);});
     connect(ui->btn_new, &QPushButton::clicked, 
             this, [=](){ ui->Page->setCurrentIndex(2); 
                          emit open_camera_notification(2);});
@@ -44,7 +46,11 @@ Face::Face(QWidget *parent)
             this, [=](){
             emit Face::enroll_new_face_notification(
                     ui->id_edit->text().toInt(),
-                    ui->name_edit->text());});
+                    ui->name_edit->text());
+            //zhao
+            ui->snapshot_dialog->close(); 
+            });
+                    
     //点击下一页发送读日志申请
     connect(ui->btn_next, &QPushButton::clicked,
             this, [=](){ emit read_notification(10); });
@@ -78,6 +84,13 @@ Face::Face(QWidget *parent)
     //获得抓拍照后弹出输入信息和确认窗口
     connect(face_worker,&FaceWorker::snapshotReady,
             this,&Face::showSnapshotWidget);
+
+    //zhao
+    //录入确认
+    connect(this, &Face::enroll_new_face_notification,
+            face_worker, &FaceWorker::enrollCapturedFace);
+    connect(ui->btn_ok,&QPushButton::clicked,
+            face_worker,&FaceWorker::captureSnapshot);
 
 }
 

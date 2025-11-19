@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QTimer>
 #include <QImage>       // (用于向 UI 传递图像)
 #include <QThread>      // (我们会把它移到 QThread)
 #include <atomic>
@@ -60,8 +61,8 @@ private:
      */
     QImage convertMatToQImage(const cv::Mat& mat);
     int m_lastRecognizedId;
-
     void handleHardwareTrigger(const RecognitionResult& result);
+    QTimer *m_timer;
 
 public slots:
     // --- 这是 UI 可以 *调用* 的接口 ---
@@ -100,7 +101,8 @@ public slots:
      */
     void checkIdAvailability(const QString& id_str);
 
-
+private slots:
+    void processOneFrame();
 
 signals:
     // --- 这是 UI 可以 *接收* 的接口 ---

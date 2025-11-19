@@ -11,6 +11,9 @@ FaceWorker::FaceWorker(QObject *parent)
 {
     // 注册 RecognitionResult，使其可以在信号/槽中传递
     qRegisterMetaType<RecognitionResult>("RecognitionResult");
+    //timer
+    m_timer = new QTimer(this);
+    connect(m_timer, &QTimer::timeout, this, &FaceWorker::processOneFrame);
 }
 
 FaceWorker::~FaceWorker()
@@ -54,75 +57,75 @@ void FaceWorker::startProcessing(int deviceId)
 
     emit statusChanged("摄像头已打开，开始处理...");
     m_isRunning = true;
-
-    // --- 3. 核心循环 (在工作线程中运行，不会冻结 UI) ---
-    while (m_isRunning) 
+    m_timer->start(30);
+}
+void FaceWorker::processOneFrame()
+{
+    if(!m_isRunning) 
     {
-        cv::Mat frame_1080p;
-        if (!m_cap.read(frame_1080p)) { // (使用 .read() 更健壮)
-            // 如果读取失败 (例如摄像头断开)
-            emit statusChanged("错误: 无法从摄像头读取帧！");
-            QThread::msleep(1000); // 休息 1 秒
-            continue; 
-        }
-
-        if (frame_1080p.empty()) {
-            QThread::msleep(10); // (给 CPU 一点休息时间)
-            continue; 
-        }
-        //缩小原图像
-        cv::Mat smallFrame;
-        const float targetWidth = 640.0;
-        float scale = targetWidth / frame_1080p.cols;
-        cv::resize(frame_1080p, smallFrame, cv::Size(), scale, scale, cv::INTER_LINEAR);
-        // --- 复制结束 ---
-        if (m_snapshotRequested)
-        {
-            m_snapshotRequested = false; // (重置标志)
-            
-            // (冻结) 把这一帧保存到 m_lastCleanFrame
-            m_lastCleanFrame = smallFrame.clone(); // (克隆一份 *干净* 的帧)
-            
-            // (发送) 把“冻结”的帧发给 UI 作为“预览”
-            emit snapshotReady(convertMatToQImage(m_lastCleanFrame));
-            
-            emit statusChanged("抓拍成功！准备录入。");
-        }
-
-        // a. 调用后端引擎 (已优化，不再卡顿)
-        RecognitionResult result = m_processor.processFrame(smallFrame);
-        //硬件调用
-        handleHardwareTrigger(result);
-
-        // b. (后端绘制) 在帧上绘制结果
-        // (UI 线程不需要再做任何绘制)
-        if (result.is_foundface) {
-            // 画方框
-            cv::rectangle(smallFrame, result.face_position, cv::Scalar(0, 255, 0), 2);
-            
-            // 准备两行文本
-            std::string name_text = result.name;
-            std::stringstream ss;
-            ss << "Dist: " << std::fixed << std::setprecision(1) << result.confidence;
-            std::string conf_text = ss.str();
-            
-            // 计算位置
-            cv::Point confPos(result.face_position.x, result.face_position.y - 30); 
-            cv::Point namePos(result.face_position.x, result.face_position.y - 10); 
-
-            // 画上去
-            cv::putText(smallFrame, conf_text, confPos, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-            cv::putText(smallFrame, name_text, namePos, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-        }
-
-        // c. 发射信号，把结果 (QImage) 发给 UI 线程
-        QImage qImg = convertMatToQImage(smallFrame);
-        emit frameReady(qImg.copy()); // (必须 .copy() 保证线程安全)
+        return;
+    }
+    cv::Mat frame_1080p;
+    if (!m_cap.read(frame_1080p)) { // (使用 .read() 更健壮)
+        // 如果读取失败 (例如摄像头断开)
+        emit statusChanged("错误: 无法从摄像头读取帧！");
+        return; 
     }
 
-    m_cap.release();
-    emit statusChanged("处理已停止。");
+    if (frame_1080p.empty()) {
+        return; 
+        }
+    //缩小原图像
+    cv::Mat smallFrame;
+    const float targetWidth = 640.0;
+    float scale = targetWidth / frame_1080p.cols;
+    cv::resize(frame_1080p, smallFrame, cv::Size(), scale, scale, cv::INTER_LINEAR);
+    // --- 复制结束 ---
+    if (m_snapshotRequested)
+    {
+        m_snapshotRequested = false; // (重置标志)
+        
+        // (冻结) 把这一帧保存到 m_lastCleanFrame
+        m_lastCleanFrame = smallFrame.clone(); // (克隆一份 *干净* 的帧)
+        
+        // (发送) 把“冻结”的帧发给 UI 作为“预览”
+        emit snapshotReady(convertMatToQImage(m_lastCleanFrame));
+        
+        emit statusChanged("抓拍成功！准备录入。");
+    }
+
+    // a. 调用后端引擎 (已优化，不再卡顿)
+    RecognitionResult result = m_processor.processFrame(smallFrame);
+    //硬件调用
+    handleHardwareTrigger(result);
+
+    // b. (后端绘制) 在帧上绘制结果
+    // (UI 线程不需要再做任何绘制)
+    if (result.is_foundface) {
+        // 画方框
+        cv::rectangle(smallFrame, result.face_position, cv::Scalar(0, 255, 0), 2);
+        
+        // 准备两行文本
+        std::string name_text = result.name;
+        std::stringstream ss;
+        ss << "Dist: " << std::fixed << std::setprecision(1) << result.confidence;
+        std::string conf_text = ss.str();
+        
+        // 计算位置
+        cv::Point confPos(result.face_position.x, result.face_position.y - 30); 
+        cv::Point namePos(result.face_position.x, result.face_position.y - 10); 
+
+        // 画上去
+        cv::putText(smallFrame, conf_text, confPos, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
+        cv::putText(smallFrame, name_text, namePos, cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
+    }
+
+    // c. 发射信号，把结果 (QImage) 发给 UI 线程
+    QImage qImg = convertMatToQImage(smallFrame);
+    emit frameReady(qImg.copy()); // (必须 .copy() 保证线程安全)
 }
+
+
 
 /**
  * @brief (槽) 停止循环。
@@ -131,6 +134,12 @@ void FaceWorker::startProcessing(int deviceId)
 void FaceWorker::stopProcessing()
 {
     m_isRunning = false; // 告诉 while 循环停止
+    m_timer->stop();
+    m_cap.release();
+    if (m_cap.isOpened()) {
+        m_cap.release();
+    }
+    emit statusChanged("处理已停止。");
 }
 
 /**

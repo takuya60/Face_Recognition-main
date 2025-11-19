@@ -21,8 +21,8 @@ QT_BEGIN_MOC_NAMESPACE
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 struct qt_meta_stringdata_FaceWorker_t {
-    QByteArrayData data[22];
-    char stringdata0[274];
+    QByteArrayData data[23];
+    char stringdata0[290];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -52,7 +52,8 @@ QT_MOC_LITERAL(17, 204, 18), // "enrollCapturedFace"
 QT_MOC_LITERAL(18, 223, 10), // "employeeId"
 QT_MOC_LITERAL(19, 234, 12), // "employeeName"
 QT_MOC_LITERAL(20, 247, 19), // "checkIdAvailability"
-QT_MOC_LITERAL(21, 267, 6) // "id_str"
+QT_MOC_LITERAL(21, 267, 6), // "id_str"
+QT_MOC_LITERAL(22, 274, 15) // "processOneFrame"
 
     },
     "FaceWorker\0frameReady\0\0frame\0snapshotReady\0"
@@ -63,7 +64,7 @@ QT_MOC_LITERAL(21, 267, 6) // "id_str"
     "stopProcessing\0captureSnapshot\0"
     "enrollCapturedFace\0employeeId\0"
     "employeeName\0checkIdAvailability\0"
-    "id_str"
+    "id_str\0processOneFrame"
 };
 #undef QT_MOC_LITERAL
 
@@ -73,7 +74,7 @@ static const uint qt_meta_data_FaceWorker[] = {
        8,       // revision
        0,       // classname
        0,    0, // classinfo
-      10,   14, // methods
+      11,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -81,18 +82,19 @@ static const uint qt_meta_data_FaceWorker[] = {
        5,       // signalCount
 
  // signals: name, argc, parameters, tag, flags
-       1,    1,   64,    2, 0x06 /* Public */,
-       4,    1,   67,    2, 0x06 /* Public */,
-       6,    1,   70,    2, 0x06 /* Public */,
-       8,    1,   73,    2, 0x06 /* Public */,
-      10,    1,   76,    2, 0x06 /* Public */,
+       1,    1,   69,    2, 0x06 /* Public */,
+       4,    1,   72,    2, 0x06 /* Public */,
+       6,    1,   75,    2, 0x06 /* Public */,
+       8,    1,   78,    2, 0x06 /* Public */,
+      10,    1,   81,    2, 0x06 /* Public */,
 
  // slots: name, argc, parameters, tag, flags
-      13,    1,   79,    2, 0x0a /* Public */,
-      15,    0,   82,    2, 0x0a /* Public */,
-      16,    0,   83,    2, 0x0a /* Public */,
-      17,    2,   84,    2, 0x0a /* Public */,
-      20,    1,   89,    2, 0x0a /* Public */,
+      13,    1,   84,    2, 0x0a /* Public */,
+      15,    0,   87,    2, 0x0a /* Public */,
+      16,    0,   88,    2, 0x0a /* Public */,
+      17,    2,   89,    2, 0x0a /* Public */,
+      20,    1,   94,    2, 0x0a /* Public */,
+      22,    0,   97,    2, 0x08 /* Private */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QImage,    3,
@@ -107,6 +109,7 @@ static const uint qt_meta_data_FaceWorker[] = {
     QMetaType::Void,
     QMetaType::Void, QMetaType::Int, QMetaType::QString,   18,   19,
     QMetaType::Void, QMetaType::QString,   21,
+    QMetaType::Void,
 
        0        // eod
 };
@@ -127,6 +130,7 @@ void FaceWorker::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 7: _t->captureSnapshot(); break;
         case 8: _t->enrollCapturedFace((*reinterpret_cast< int(*)>(_a[1])),(*reinterpret_cast< const QString(*)>(_a[2]))); break;
         case 9: _t->checkIdAvailability((*reinterpret_cast< const QString(*)>(_a[1]))); break;
+        case 10: _t->processOneFrame(); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -209,13 +213,13 @@ int FaceWorker::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 10)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 10;
+        _id -= 11;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 10)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 10;
+        _id -= 11;
     }
     return _id;
 }

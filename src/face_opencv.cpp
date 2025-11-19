@@ -95,7 +95,7 @@ RecognitionResult face_processor::processFrame(const cv::Mat& frame)
         double confidence =0.0;
         faceRecognizer->predict(faceROI,label,confidence);
         result.confidence = confidence;
-        if( confidence<80.0)
+        if( confidence<40.0)
         {
             result.is_known=true;
             result.person_id=label;
